@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import axios from 'axios';
 
 // Whitelist domain yang boleh diproxy — jangan biarin route ini jadi
 // open proxy buat sembarang URL (rawan disalahgunakan orang lain).
@@ -21,6 +22,28 @@ function isAllowedHost(hostname) {
   return ALLOWED_HOSTS.some((h) => hostname === h || hostname.endsWith('.' + h));
 }
 
+const ANICHIN_REFERER = 'https://anichin.moe/';
+
+// PENTING: pakai axios, bukan fetch() bawaan Node/Vercel. Spec Fetch API
+// (WHATWG) mendaftarkan "Referer" sebagai forbidden header — banyak runtime
+// (termasuk fetch() di Node/Vercel) diam-diam MEMBUANG header Referer yang
+// diset manual lewat objek headers, walau kodenya keliatan benar dan gak ada
+// error sama sekali. axios gak terikat batasan itu karena bikin request HTTP
+// langsung lewat http/https module Node, jadi Referer beneran terkirim.
+async function fetchUpstream(url, withReferer) {
+  return axios.get(url, {
+    headers: {
+      ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.moe' } : {}),
+      'User-Agent':
+        'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
+    },
+    maxRedirects: 5,
+    responseType: 'text',
+    validateStatus: () => true, // handle non-2xx ourselves instead of throwing
+    timeout: 15000
+  });
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const target = searchParams.get('url');
@@ -40,38 +63,23 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Host tidak diizinkan untuk diproxy' }, { status: 403 });
   }
 
-  // Video hosts like OK.ru check Referer against the site that's actually
-  // authorized to embed them — NOT the video host's own domain. Using
-  // anichin's site as Referer here (as if a real visitor were watching on
-  // Anichin itself) instead of the target's own origin.
-  const ANICHIN_REFERER = 'https://anichin.moe/';
-
-  async function tryFetch(withReferer) {
-    return fetch(parsed.toString(), {
-      headers: {
-        ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.moe' } : {}),
-        'User-Agent':
-          'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
-      },
-      redirect: 'follow'
-    });
-  }
-
   try {
-    let upstream = await tryFetch(true);
+    let upstream = await fetchUpstream(parsed.toString(), true);
     // Some hosts reject a mismatched/unexpected Referer but allow requests
     // with none at all — worth one retry before giving up.
-    if (!upstream.ok) upstream = await tryFetch(false);
+    if (upstream.status < 200 || upstream.status >= 300) {
+      upstream = await fetchUpstream(parsed.toString(), false);
+    }
 
-    if (!upstream.ok) {
+    if (upstream.status < 200 || upstream.status >= 300) {
       return NextResponse.json(
         { error: `Upstream balikin status ${upstream.status}` },
         { status: 502 }
       );
     }
 
-    const contentType = upstream.headers.get('content-type') || 'text/html; charset=utf-8';
-    let body = await upstream.text();
+    const contentType = upstream.headers['content-type'] || 'text/html; charset=utf-8';
+    let body = upstream.data;
 
     // Kalau responsnya HTML, resource internal (script/css/img) yang pake path
     // relatif bakal salah resolve kalau di-serve dari domain kita sendiri.
