@@ -2,11 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-// Server yang di-domain-lock ke anichin.moe (dia ngecek Referer di server-side,
-// jadi browser gak bisa spoof langsung). Daripada nebak host mana doang yang
-// domain-lock (ternyata bisa lewat wrapper anichin.moe sendiri, bukan cuma
-// host aslinya kayak OK.ru), sekarang SEMUA server non-YouTube default lewat
-// /api/embed-proxy yang fetch-nya dari backend sambil nyetel Referer: anichin.moe.
+// Some hosts server-side-check Referer against anichin.moe and reject direct
+// browser embeds — that's what /api/embed-proxy was originally built for.
+// But testing showed EVERY host returning 403 through that proxy, all at
+// once — consistent with Vercel's outbound IP itself being flagged as a
+// datacenter/bot IP by whatever anti-scraping layer sits in front of these
+// hosts, not a per-host Referer problem. A real visitor's phone/browser IP
+// doesn't have that problem, so default to loading iframes DIRECTLY from
+// the browser now. The proxy is still available as a manual fallback via
+// FORCE_PROXY_HOSTS below for any specific host confirmed to need it.
+const FORCE_PROXY_HOSTS = [];
+
 function toEmbeddable(url) {
   if (!url) return null;
   try {
@@ -20,7 +26,10 @@ function toEmbeddable(url) {
       const id = u.pathname.replace('/', '');
       return `https://www.youtube.com/embed/${id}?modestbranding=1&rel=0`;
     }
-    return `/api/embed-proxy?url=${encodeURIComponent(url)}`;
+    if (FORCE_PROXY_HOSTS.some((h) => host === h || host.endsWith('.' + h))) {
+      return `/api/embed-proxy?url=${encodeURIComponent(url)}`;
+    }
+    return url;
   } catch {
     // url wasn't a valid absolute URL (e.g. a bare relative path the scraper
     // picked up by mistake). Returning it raw used to make the browser
@@ -121,6 +130,7 @@ export default function VideoPlayer({ defaultPlayer, servers = [] }) {
   const [loading, setLoading] = useState(true);
   const [exhausted, setExhausted] = useState(false);
   const timeoutRef = useRef(null);
+  const iframeRef = useRef(null);
 
   const isAllSub = category === 'allsub';
   const langList = !isAllSub && category ? grouped[category] : null;
@@ -151,6 +161,26 @@ export default function VideoPlayer({ defaultPlayer, servers = [] }) {
 
   function handleLoad() {
     clearTimeout(timeoutRef.current);
+
+    // /api/embed-proxy is same-origin, so when the upstream video host fails
+    // (403/404/etc), the proxy still returns HTTP 200-ish JSON like
+    // {"error": "..."}. The iframe still fires onLoad for that (browsers
+    // only fire onError for network-level failures, not HTTP error bodies),
+    // so without this check a failed server just gets stuck showing raw
+    // JSON instead of auto-skipping to the next one.
+    if (typeof activeUrl === 'string' && activeUrl.startsWith('/api/embed-proxy')) {
+      try {
+        const text = iframeRef.current?.contentDocument?.body?.innerText || '';
+        if (/^\s*\{/.test(text) && text.includes('"error"')) {
+          handleFailure();
+          return;
+        }
+      } catch {
+        // cross-origin (shouldn't happen for our own proxy, but just in
+        // case) — fall through and treat it as a normal successful load.
+      }
+    }
+
     setLoading(false);
   }
 
@@ -201,6 +231,7 @@ export default function VideoPlayer({ defaultPlayer, servers = [] }) {
                 </div>
               )}
               <iframe
+                ref={iframeRef}
                 key={activeUrl}
                 src={activeUrl}
                 allowFullScreen
