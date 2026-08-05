@@ -7,6 +7,8 @@ const ALLOWED_HOSTS = [
   'anichin.moe',
   'anichin.forum',
   'anichin.cc',
+  'anichin.cafe',
+  'anichin.stream',
   'ok.ru',
   'rpmshare.com',
   'earnvids.com',
@@ -14,7 +16,11 @@ const ALLOWED_HOSTS = [
   'streamhg.com',
   'dood.re', 'dood.wf', 'dood.pm', 'dood.li', 'dood.ws',
   'mixdrop.co', 'mixdrop.to',
-  'streamtape.com'
+  'streamtape.com',
+  'rumble.com',
+  'dailymotion.com',
+  'short.icu',
+  'listeamed.net'
   // tambahin host provider server lain di sini kalau ternyata ke-block juga
 ];
 
@@ -22,7 +28,7 @@ function isAllowedHost(hostname) {
   return ALLOWED_HOSTS.some((h) => hostname === h || hostname.endsWith('.' + h));
 }
 
-const ANICHIN_REFERER = 'https://anichin.moe/';
+const ANICHIN_REFERER = 'https://anichin.cafe/';
 
 // PENTING: pakai axios, bukan fetch() bawaan Node/Vercel. Spec Fetch API
 // (WHATWG) mendaftarkan "Referer" sebagai forbidden header — banyak runtime
@@ -33,7 +39,7 @@ const ANICHIN_REFERER = 'https://anichin.moe/';
 async function fetchUpstream(url, withReferer) {
   return axios.get(url, {
     headers: {
-      ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.moe' } : {}),
+      ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.cafe' } : {}),
       'User-Agent':
         'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
     },
