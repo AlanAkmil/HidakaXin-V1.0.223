@@ -1,0 +1,31 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { isFavorite, toggleFavorite } from '../lib/store';
+
+export default function FavoriteButton({ item }) {
+  const [fav, setFav] = useState(false);
+
+  useEffect(() => {
+    setFav(isFavorite(item.url));
+  }, [item.url]);
+
+  function handleClick() {
+    const nowFav = toggleFavorite(item);
+    setFav(nowFav);
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+        fav ? 'border-gold bg-gold-soft text-gold' : 'border-line bg-paper-card text-ink-soft hover:border-gold hover:text-gold'
+      }`}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill={fav ? '#f2a900' : 'none'} stroke="#f2a900" strokeWidth="2">
+        <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7-6.3-3.9L5.7 21l1.7-7-5.4-4.7 7.1-.6L12 2Z" />
+      </svg>
+      {fav ? 'Tersimpan' : 'Favoritkan'}
+    </button>
+  );
+}
