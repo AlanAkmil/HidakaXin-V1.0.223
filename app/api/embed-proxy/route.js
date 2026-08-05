@@ -44,12 +44,12 @@ export async function GET(request) {
   // authorized to embed them — NOT the video host's own domain. Using
   // anichin's site as Referer here (as if a real visitor were watching on
   // Anichin itself) instead of the target's own origin.
-  const ANICHIN_REFERER = 'https://anichin.forum/';
+  const ANICHIN_REFERER = 'https://anichin.moe/';
 
   async function tryFetch(withReferer) {
     return fetch(parsed.toString(), {
       headers: {
-        ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.forum' } : {}),
+        ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.moe' } : {}),
         'User-Agent':
           'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
       },
