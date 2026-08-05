@@ -2,17 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-// Some hosts server-side-check Referer against anichin.moe and reject direct
-// browser embeds — that's what /api/embed-proxy was originally built for.
-// But testing showed EVERY host returning 403 through that proxy, all at
-// once — consistent with Vercel's outbound IP itself being flagged as a
-// datacenter/bot IP by whatever anti-scraping layer sits in front of these
-// hosts, not a per-host Referer problem. A real visitor's phone/browser IP
-// doesn't have that problem, so default to loading iframes DIRECTLY from
-// the browser now. The proxy is still available as a manual fallback via
-// FORCE_PROXY_HOSTS below for any specific host confirmed to need it.
-const FORCE_PROXY_HOSTS = [];
-
+// Confirmed via the video host's own error message: "Link ini hanya dapat
+// diputar dari halaman anichin.moe" — this is a real server-side Referer
+// lock, which a browser iframe can't spoof (it sends the actual page's
+// Referer, i.e. this app's own domain). So this DOES need /api/embed-proxy
+// after all, now fixed to send the correct anichin.moe Referer.
 function toEmbeddable(url) {
   if (!url) return null;
   try {
@@ -26,10 +20,7 @@ function toEmbeddable(url) {
       const id = u.pathname.replace('/', '');
       return `https://www.youtube.com/embed/${id}?modestbranding=1&rel=0`;
     }
-    if (FORCE_PROXY_HOSTS.some((h) => host === h || host.endsWith('.' + h))) {
-      return `/api/embed-proxy?url=${encodeURIComponent(url)}`;
-    }
-    return url;
+    return `/api/embed-proxy?url=${encodeURIComponent(url)}`;
   } catch {
     // url wasn't a valid absolute URL (e.g. a bare relative path the scraper
     // picked up by mistake). Returning it raw used to make the browser
