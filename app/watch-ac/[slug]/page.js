@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import anichin from '../../../lib/anichinScraper';
-import VideoPlayer from '../../../components/VideoPlayer';
+import AnichinVideoPlayer from '../../../components/AnichinVideoPlayer';
 import HistoryRecorder from '../../../components/HistoryRecorder';
 
 export const revalidate = 120;
@@ -39,7 +39,7 @@ export default async function WatchAcPage({ params }) {
 
       <h1 className="mb-4 font-display text-xl font-extrabold text-ink sm:text-2xl">{d.title}</h1>
 
-      <VideoPlayer defaultPlayer={d.defaultPlayer} servers={d.servers} />
+      <AnichinVideoPlayer defaultPlayer={d.defaultPlayer} servers={d.servers} />
 
       {d.downloads?.length > 0 && (
         <div className="mt-8">
