@@ -40,15 +40,28 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Host tidak diizinkan untuk diproxy' }, { status: 403 });
   }
 
-  try {
-    const upstream = await fetch(parsed.toString(), {
+  // Video hosts like OK.ru check Referer against the site that's actually
+  // authorized to embed them — NOT the video host's own domain. Using
+  // anichin's site as Referer here (as if a real visitor were watching on
+  // Anichin itself) instead of the target's own origin.
+  const ANICHIN_REFERER = 'https://anichin.forum/';
+
+  async function tryFetch(withReferer) {
+    return fetch(parsed.toString(), {
       headers: {
-        'Referer': 'https://anichin.moe/',
-        'Origin': 'https://anichin.moe',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
+        ...(withReferer ? { Referer: ANICHIN_REFERER, Origin: 'https://anichin.forum' } : {}),
+        'User-Agent':
+          'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
       },
       redirect: 'follow'
     });
+  }
+
+  try {
+    let upstream = await tryFetch(true);
+    // Some hosts reject a mismatched/unexpected Referer but allow requests
+    // with none at all — worth one retry before giving up.
+    if (!upstream.ok) upstream = await tryFetch(false);
 
     if (!upstream.ok) {
       return NextResponse.json(
