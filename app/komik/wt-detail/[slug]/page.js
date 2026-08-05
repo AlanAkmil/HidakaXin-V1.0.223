@@ -3,19 +3,31 @@ import webtoons from '../../../../lib/webtoonsScraper';
 
 export const revalidate = 300;
 
-const MAX_PAGES = 12; // ~120 episodes cap, so a single huge series doesn't fetch forever
+// Cap at 20 pages (~200 episodes). We don't rely on hasNext because the
+// HTML paginate selector is unreliable across Webtoons locale/layout changes.
+// Instead we keep fetching until a page returns 0 new episodes (real end),
+// or we hit the cap. Dedup by episodeNo guards against duplicate results if
+// two pages somehow overlap.
+const MAX_PAGES = 20;
 
 async function getData(url) {
   try {
     let page = 1;
     let episodesList = [];
     let meta = null;
+    const seen = new Set();
 
     while (page <= MAX_PAGES) {
       const d = await webtoons.episodes(url, page);
       if (!meta) meta = d;
-      episodesList = episodesList.concat(d.episodesList || []);
-      if (!d.hasNext) break;
+      const newEps = (d.episodesList || []).filter((ep) => {
+        const key = ep.episodeNo ?? ep.url;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      if (newEps.length === 0) break; // empty page = no more episodes
+      episodesList = episodesList.concat(newEps);
       page++;
     }
 
