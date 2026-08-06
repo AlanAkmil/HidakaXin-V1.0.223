@@ -48,19 +48,23 @@ export default async function WatchAcPage({ params }) {
             {d.downloads.map((group, i) => (
               <div key={i} className="rounded-xl border border-line bg-paper-card p-4 shadow-card">
                 <p className="mb-2 text-sm font-bold text-accent">{group.subtitle}</p>
-                <div className="flex flex-wrap gap-2">
-                  {group.links.map((l, j) => (
-                    <a
-                      key={j}
-                      href={l.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-accent hover:text-accent"
-                    >
-                      {l.label}
-                    </a>
-                  ))}
-                </div>
+                {group.unavailable ? (
+                  <p className="text-xs text-ink-faint">Belum tersedia buat kualitas ini.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {group.links.map((l, j) => (
+                      <a
+                        key={j}
+                        href={l.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-accent hover:text-accent"
+                      >
+                        {l.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
