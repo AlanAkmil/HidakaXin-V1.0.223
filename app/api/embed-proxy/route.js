@@ -9,6 +9,7 @@ const ALLOWED_HOSTS = [
   'anichin.cc',
   'anichin.cafe',
   'anichin.stream',
+  'anichin-player.web.id',
   'ok.ru',
   'rpmshare.com',
   'earnvids.com',
