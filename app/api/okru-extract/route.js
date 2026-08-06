@@ -69,6 +69,11 @@ function extractMetadata(html) {
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const target = searchParams.get('url');
+  // Which site's Referer to present to OK.ru — matters because the actual
+  // CDN video URLs OK.ru hands back are signed per-request and some hosts
+  // validate Referer against the site that's legitimately embedding them.
+  // Defaults to Anichin's domain for backward compat with existing calls.
+  const ref = searchParams.get('ref') || 'https://anichin.cafe/';
 
   if (!target) {
     return Response.json({ error: 'Parameter ?url= wajib diisi (link ok.ru/videoembed/...)' }, { status: 400 });
@@ -85,7 +90,7 @@ export async function GET(request) {
 
   try {
     const res = await axios.get(target, {
-      headers: { 'User-Agent': UA, Referer: 'https://anichin.cafe/' },
+      headers: { 'User-Agent': UA, Referer: ref },
       timeout: 15000,
       validateStatus: () => true
     });
