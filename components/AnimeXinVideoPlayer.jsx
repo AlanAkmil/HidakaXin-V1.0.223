@@ -81,12 +81,15 @@ function classifyServers(servers) {
     pushLang(buckets.raw, 'Lainnya', label, s.url);
   }
 
+  // Rank: Ok.ru first (0), everything else in the middle (1), Dailymotion
+  // always last (2) — regardless of the order the source site lists them in.
+  function hostRank(h) {
+    if (isOkRu(h.url)) return 0;
+    if (/dail?ymotion|daylimotion/i.test(h.host)) return 2;
+    return 1;
+  }
   function sortHosts(hosts) {
-    return [...hosts].sort((a, b) => {
-      const aBad = /dail?ymotion|daylimotion/i.test(a.host) ? 1 : 0;
-      const bBad = /dail?ymotion|daylimotion/i.test(b.host) ? 1 : 0;
-      return aBad - bBad;
-    });
+    return [...hosts].sort((a, b) => hostRank(a) - hostRank(b));
   }
 
   const sortLangs = (map) => [...map.entries()]
