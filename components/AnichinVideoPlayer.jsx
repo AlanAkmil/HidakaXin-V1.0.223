@@ -104,6 +104,12 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
 
   return (
     <div>
+      {/* TEMP DEBUG — hapus abis ketauan akar masalahnya */}
+      {current && (
+        <p className="mb-2 break-all text-[10px] text-ink-faint">
+          debug: label="{current.label}" isOkRu={String(currentIsOkRu)} url={current.url}
+        </p>
+      )}
       <div className="relative overflow-hidden rounded-xl border border-line bg-black shadow-card">
         <div className="aspect-video">
           {!current ? (
