@@ -20,6 +20,7 @@ const UA = 'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, l
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const target = searchParams.get('url');
+  const ref = searchParams.get('ref') || 'https://anichin.cafe/';
 
   if (!target) {
     return Response.json({ error: 'Parameter url wajib diisi' }, { status: 400 });
@@ -40,7 +41,7 @@ export async function GET(request) {
     const upstream = await axios.get(target, {
       headers: {
         'User-Agent': UA,
-        Referer: 'https://anichin.cafe/',
+        Referer: ref,
         ...(range ? { Range: range } : {})
       },
       responseType: 'stream',
