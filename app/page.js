@@ -140,7 +140,7 @@ export default async function HomePage() {
           <SectionHeader title="Judul Baru" href="/daftar?order=latest" />
           <div className="grid grid-cols-3 gap-3">
             {mergedLatest.slice(0, 9).map((item, i) => (
-              <AnimeCard key={item.url + i} item={item} index={i} watchMode />
+              <AnimeCard key={item.url + i} item={item} index={i} />
             ))}
           </div>
         </section>
