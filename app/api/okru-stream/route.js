@@ -48,11 +48,18 @@ export async function GET(request) {
     }
 
     const headers = new Headers();
-    for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) {
+    for (const h of ['content-length', 'content-range', 'accept-ranges']) {
       if (upstream.headers[h]) headers.set(h, upstream.headers[h]);
     }
     if (!headers.has('accept-ranges')) headers.set('accept-ranges', 'bytes');
-    if (!headers.has('content-type')) headers.set('content-type', 'video/mp4');
+    // Force video/mp4 regardless of whatever upstream sends — these
+    // okcdn.ru links are confirmed mp4, but upstream's own content-type
+    // header (e.g. a generic octet-stream) makes the HTML5 <video> element
+    // reject it as unsupported even though the bytes are fine. A full-page
+    // browser navigation to the same URL plays it fine because Chrome
+    // sniffs the actual bytes there instead of trusting the header —
+    // <video> doesn't do that sniffing, so we set it explicitly.
+    headers.set('content-type', 'video/mp4');
     headers.set('cache-control', 'no-store');
 
     // upstream.data is a Node Readable stream (axios responseType: 'stream')
