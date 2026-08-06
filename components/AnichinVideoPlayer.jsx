@@ -51,6 +51,23 @@ function pickDefaultQualityIndex(videos) {
   return idx >= 0 ? idx : Math.floor(videos.length / 2);
 }
 
+// OK.ru's own quality tags aren't resolution numbers — this is the standard
+// tag→resolution mapping used by other OK.ru extractors (not present in
+// OK.ru's own response data, so treat as a strong convention rather than
+// confirmed-from-source).
+const QUALITY_LABELS = {
+  mobile: '144p',
+  lowest: '240p',
+  low: '360p',
+  sd: '480p',
+  hd: '720p',
+  full: '1080p'
+};
+
+function qualityLabel(quality, index) {
+  return QUALITY_LABELS[quality] || quality || `Kualitas ${index + 1}`;
+}
+
 export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   const validServers = useMemo(() => servers.filter((s) => s?.url), [servers]);
 
@@ -213,7 +230,7 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
                                 i === okruQualityIndex ? 'text-accent' : 'text-white/80 hover:bg-white/10'
                               }`}
                             >
-                              {v.quality || `Kualitas ${i + 1}`}
+                              {qualityLabel(v.quality, i)}
                               {i === okruQualityIndex ? ' ✓' : ''}
                             </button>
                           ))}
