@@ -38,10 +38,12 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   const [okruQualityIndex, setOkruQualityIndex] = useState(0);
   const [okruLoading, setOkruLoading] = useState(false);
   const [okruError, setOkruError] = useState(null);
+  const [okruPlaybackError, setOkruPlaybackError] = useState(null);
 
   useEffect(() => {
     setOkruVideos(null);
     setOkruError(null);
+    setOkruPlaybackError(null);
     setOkruQualityIndex(0);
     if (!current || !currentIsOkRu) return;
 
@@ -78,6 +80,28 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   const iframeSrc = current && !currentIsOkRu ? toEmbeddable(current.url) : null;
   const activeOkruVideo = okruVideos?.[okruQualityIndex];
 
+  // MediaError.code is a plain number (1-4) with no message of its own —
+  // map it to something readable so a failure shows real info instead of
+  // just a broken-image icon with no explanation.
+  const MEDIA_ERROR_LABELS = {
+    1: 'MEDIA_ERR_ABORTED — dibatalkan',
+    2: 'MEDIA_ERR_NETWORK — gagal jaringan pas ambil video',
+    3: 'MEDIA_ERR_DECODE — gagal decode/format rusak',
+    4: 'MEDIA_ERR_SRC_NOT_SUPPORTED — src gak didukung / gagal dimuat'
+  };
+
+  function handleVideoError(e) {
+    const err = e.currentTarget.error;
+    setOkruPlaybackError(
+      err ? `${MEDIA_ERROR_LABELS[err.code] || `Error code ${err.code}`}${err.message ? ` — ${err.message}` : ''}` : 'Gagal muat video (unknown error)'
+    );
+  }
+
+  function selectOkruQuality(i) {
+    setOkruPlaybackError(null);
+    setOkruQualityIndex(i);
+  }
+
   return (
     <div>
       <div className="relative overflow-hidden rounded-xl border border-line bg-black shadow-card">
@@ -91,14 +115,33 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
                 Ngambil link video dari OK.ru...
               </div>
             ) : activeOkruVideo ? (
-              <video
-                key={activeOkruVideo.url}
-                src={`/api/okru-stream?url=${encodeURIComponent(activeOkruVideo.url)}`}
-                controls
-                autoPlay
-                playsInline
-                className="h-full w-full bg-black"
-              />
+              <>
+                <video
+                  key={activeOkruVideo.url}
+                  src={`/api/okru-stream?url=${encodeURIComponent(activeOkruVideo.url)}`}
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  onError={handleVideoError}
+                  onCanPlay={() => setOkruPlaybackError(null)}
+                  className="h-full w-full bg-black"
+                />
+                {okruPlaybackError && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/85 px-4 text-center">
+                    <p className="text-sm font-semibold text-white">Video gagal dimuat</p>
+                    <p className="max-w-xs break-words text-xs text-white/60">{okruPlaybackError}</p>
+                    {validServers.length > 1 && (
+                      <button
+                        onClick={nextServer}
+                        className="mt-1 rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:border-accent hover:text-accent"
+                      >
+                        Coba server lain →
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
                 <p className="text-sm text-white/70">{okruError || 'Gagal muat video dari OK.ru'}</p>
@@ -133,7 +176,7 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
             {okruVideos.map((v, i) => (
               <button
                 key={v.quality || i}
-                onClick={() => setOkruQualityIndex(i)}
+                onClick={() => selectOkruQuality(i)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                   i === okruQualityIndex ? 'border-accent bg-accent-50 text-accent' : 'border-line bg-paper-card text-ink-soft hover:border-accent hover:text-accent'
                 }`}
