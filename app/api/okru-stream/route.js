@@ -2,12 +2,17 @@ import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 
-// Locked to OK.ru's video CDN only — this exists purely so requests to the
-// signed okcdn.ru URLs come from OUR server's IP (the one the signature was
-// issued for), not the visitor's browser. Anichin-specific, not a general
-// proxy — keep the allowlist narrow.
+// Locked to OK.ru's known video CDN domains only — this exists purely so
+// requests to the signed CDN URLs come from OUR server's IP (the one the
+// signature was issued for), not the visitor's browser. OK.ru is part of
+// the VK/Mail.ru group and its video CDN spreads across multiple domains
+// depending which server actually hosts a given video — confirmed so far:
+// okcdn.ru AND vkuser.net (same video, different upload, different host).
+// Anichin-specific, not a general proxy — keep this narrow but expect to
+// add more VK-family CDN domains here if new ones show up.
 function isAllowedCdnHost(hostname) {
-  return hostname === 'okcdn.ru' || hostname.endsWith('.okcdn.ru');
+  const allowedSuffixes = ['okcdn.ru', 'vkuser.net', 'mycdn.me'];
+  return allowedSuffixes.some((h) => hostname === h || hostname.endsWith('.' + h));
 }
 
 const UA = 'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36';
