@@ -47,6 +47,34 @@ export async function GET(request) {
       return Response.json({ error: `Upstream balikin status ${upstream.status}` }, { status: 502 });
     }
 
+    const contentLength = Number(upstream.headers['content-length'] || 0);
+    const upstreamContentType = upstream.headers['content-type'] || '';
+
+    // A real video chunk is at minimum tens/hundreds of KB. Anything tiny,
+    // or a content-type that isn't remotely video-ish, is almost certainly
+    // an error page/JSON from OK.ru (expired signature, wrong IP this
+    // request happened to come from, etc) rather than actual video bytes.
+    // Read and surface it as text instead of silently piping it through
+    // mislabeled as video/mp4 — that just produces a confusing
+    // MEDIA_ERR_SRC_NOT_SUPPORTED in the browser with zero information.
+    const looksLikeError =
+      (contentLength > 0 && contentLength < 20000) ||
+      (upstreamContentType && !/video|octet-stream|mp4|mpegurl/i.test(upstreamContentType));
+
+    if (looksLikeError) {
+      const chunks = [];
+      for await (const chunk of upstream.data) chunks.push(chunk);
+      const bodyText = Buffer.concat(chunks).toString('utf8').slice(0, 2000);
+      return Response.json({
+        ok: false,
+        error: 'Response dari OK.ru kelihatan bukan video asli (kemungkinan link expired/invalid untuk request ini).',
+        upstreamStatus: upstream.status,
+        upstreamContentType,
+        upstreamContentLength: contentLength,
+        bodyPreview: bodyText
+      });
+    }
+
     const headers = new Headers();
     for (const h of ['content-length', 'content-range', 'accept-ranges']) {
       if (upstream.headers[h]) headers.set(h, upstream.headers[h]);
