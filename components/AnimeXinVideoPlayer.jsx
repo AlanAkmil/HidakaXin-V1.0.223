@@ -266,8 +266,8 @@ export default function AnimeXinVideoPlayer({ defaultPlayer, servers = [] }) {
 
   return (
     <div>
-      <div ref={containerRef} className="relative overflow-hidden rounded-xl border border-line bg-black shadow-card">
-        <div className="aspect-video">
+      <div ref={containerRef} className="relative rounded-xl border border-line bg-black shadow-card">
+        <div className="relative aspect-video overflow-hidden rounded-xl">
           {resolvedOkRuUrl ? (
             okruLoading ? (
               <div className="flex h-full items-center justify-center gap-2 text-sm text-white/60">
@@ -331,8 +331,9 @@ export default function AnimeXinVideoPlayer({ defaultPlayer, servers = [] }) {
               </button>
             </div>
           )}
+        </div>
 
-          <div className="absolute right-2 top-2 z-20 flex items-center gap-1.5">
+        <div className="absolute right-2 top-2 z-20 flex items-center gap-1.5">
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
@@ -446,7 +447,6 @@ export default function AnimeXinVideoPlayer({ defaultPlayer, servers = [] }) {
               )}
             </button>
           </div>
-        </div>
       </div>
 
       {!resolvedOkRuUrl && !loading && !exhausted && activeUrl && (
