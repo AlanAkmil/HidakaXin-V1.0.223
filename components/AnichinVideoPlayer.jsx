@@ -53,8 +53,19 @@ function pickDefaultQualityIndex(videos) {
 
 export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   const validServers = useMemo(() => servers.filter((s) => s?.url), [servers]);
+
+  // No server picker for Anichin — auto-pick the best option instead:
+  // every OK.ru-resolvable server first (custom player, ad-free), then
+  // whatever's left as a last-resort iframe fallback. serverIndex just
+  // walks this queue silently on failure; nothing about it is shown.
+  const autoQueue = useMemo(() => {
+    const okru = validServers.filter((s) => resolveOkRuUrl(s.url));
+    const rest = validServers.filter((s) => !resolveOkRuUrl(s.url));
+    return [...okru, ...rest];
+  }, [validServers]);
+
   const [serverIndex, setServerIndex] = useState(0);
-  const current = validServers[serverIndex] || (defaultPlayer ? { label: 'Default', url: defaultPlayer } : null);
+  const current = autoQueue[serverIndex] || (defaultPlayer ? { label: 'Default', url: defaultPlayer } : null);
   const resolvedOkRuUrl = current ? resolveOkRuUrl(current.url) : null;
   const currentIsOkRu = !!resolvedOkRuUrl;
 
@@ -96,8 +107,8 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   }, [resolvedOkRuUrl]);
 
   function nextServer() {
-    if (validServers.length > 1) {
-      setServerIndex((i) => (i + 1) % validServers.length);
+    if (autoQueue.length > 1) {
+      setServerIndex((i) => (i + 1) % autoQueue.length);
     }
   }
 
@@ -231,12 +242,12 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/85 px-4 text-center">
                     <p className="text-sm font-semibold text-white">Video gagal dimuat</p>
                     <p className="max-w-xs break-words text-xs text-white/60">{okruPlaybackError}</p>
-                    {validServers.length > 1 && (
+                    {autoQueue.length > 1 && (
                       <button
                         onClick={nextServer}
                         className="mt-1 rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:border-accent hover:text-accent"
                       >
-                        Coba server lain →
+                        Coba lagi →
                       </button>
                     )}
                   </div>
@@ -245,12 +256,12 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
                 <p className="text-sm text-white/70">{okruError || 'Gagal muat video dari OK.ru'}</p>
-                {validServers.length > 1 && (
+                {autoQueue.length > 1 && (
                   <button
                     onClick={nextServer}
                     className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:border-accent hover:text-accent"
                   >
-                    Coba server lain →
+                    Coba lagi →
                   </button>
                 )}
               </div>
@@ -268,27 +279,9 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
           )}
         </div>
       </div>
-
-      {validServers.length > 1 && (
-        <div className="mt-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-faint">
-            Server ({serverIndex + 1}/{validServers.length})
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {validServers.map((s, i) => (
-              <button
-                key={s.label + i}
-                onClick={() => setServerIndex(i)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                  i === serverIndex ? 'border-accent bg-accent-50 text-accent' : 'border-line bg-paper-card text-ink-soft hover:border-accent hover:text-accent'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Server picker removed on purpose — Anichin auto-picks the best
+          available server (OK.ru custom player first, iframe fallback if
+          none work) instead of making the user choose. */}
     </div>
   );
 }
