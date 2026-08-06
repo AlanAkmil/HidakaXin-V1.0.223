@@ -10,6 +10,29 @@ function isOkRu(url) {
   }
 }
 
+// Some episodes give a wrapper URL from Anichin's own player domain instead
+// of a direct ok.ru link, e.g.
+// "https://anichin-player.web.id/index.php?ok=15342286539442" — the `ok=`
+// query param looks like an OK.ru video ID (same numeric shape as the ones
+// seen directly, e.g. ok.ru/videoembed/9946755959474). This is a guess
+// based on that pattern, not confirmed against the wrapper page's actual
+// markup (couldn't fetch it to verify) — if wrong, okru-extract will just
+// fail cleanly with a real error instead of silently breaking.
+function resolveOkRuUrl(url) {
+  if (isOkRu(url)) return url;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, '');
+    if (host === 'anichin-player.web.id') {
+      const id = u.searchParams.get('ok');
+      if (id) return `https://ok.ru/videoembed/${id}`;
+    }
+  } catch {
+    // ignore, falls through to null
+  }
+  return null;
+}
+
 function toEmbeddable(url) {
   if (!url) return null;
   try {
@@ -32,7 +55,8 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   const validServers = useMemo(() => servers.filter((s) => s?.url), [servers]);
   const [serverIndex, setServerIndex] = useState(0);
   const current = validServers[serverIndex] || (defaultPlayer ? { label: 'Default', url: defaultPlayer } : null);
-  const currentIsOkRu = current && isOkRu(current.url);
+  const resolvedOkRuUrl = current ? resolveOkRuUrl(current.url) : null;
+  const currentIsOkRu = !!resolvedOkRuUrl;
 
   const [okruVideos, setOkruVideos] = useState(null);
   const [okruQualityIndex, setOkruQualityIndex] = useState(0);
@@ -45,11 +69,11 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
     setOkruError(null);
     setOkruPlaybackError(null);
     setOkruQualityIndex(0);
-    if (!current || !currentIsOkRu) return;
+    if (!resolvedOkRuUrl) return;
 
     let cancelled = false;
     setOkruLoading(true);
-    fetch(`/api/okru-extract?url=${encodeURIComponent(current.url)}`)
+    fetch(`/api/okru-extract?url=${encodeURIComponent(resolvedOkRuUrl)}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
@@ -69,7 +93,7 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.url, currentIsOkRu]);
+  }, [resolvedOkRuUrl]);
 
   function nextServer() {
     if (validServers.length > 1) {
