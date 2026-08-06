@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 function isOkRu(url) {
   try {
@@ -124,11 +124,32 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
   function selectOkruQuality(i) {
     setOkruPlaybackError(null);
     setOkruQualityIndex(i);
+    setQualityMenuOpen(false);
+  }
+
+  const containerRef = useRef(null);
+  const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function onFsChange() {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    }
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else if (containerRef.current?.requestFullscreen) {
+      containerRef.current.requestFullscreen();
+    }
   }
 
   return (
     <div>
-      <div className="relative overflow-hidden rounded-xl border border-line bg-black shadow-card">
+      <div ref={containerRef} className="relative overflow-hidden rounded-xl border border-line bg-black shadow-card">
         <div className="aspect-video">
           {!current ? (
             <div className="flex h-full items-center justify-center text-white/50">Player tidak tersedia</div>
@@ -144,6 +165,7 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
                   key={activeOkruVideo.url}
                   src={`/api/okru-stream?url=${encodeURIComponent(activeOkruVideo.url)}`}
                   controls
+                  controlsList="nofullscreen"
                   autoPlay
                   muted
                   playsInline
@@ -151,6 +173,60 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
                   onCanPlay={() => setOkruPlaybackError(null)}
                   className="h-full w-full bg-black"
                 />
+
+                {/* Custom gear (quality) + fullscreen overlay — native <video>
+                    fullscreen only fullscreens the <video> element itself,
+                    which would hide this overlay. We fullscreen the wrapper
+                    div instead (via toggleFullscreen) so the quality menu
+                    stays reachable in fullscreen too. */}
+                <div className="absolute right-2 top-2 z-20 flex items-center gap-1.5">
+                  {okruVideos && okruVideos.length > 1 && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setQualityMenuOpen((v) => !v)}
+                        aria-label="Pilih kualitas"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+                        </svg>
+                      </button>
+                      {qualityMenuOpen && (
+                        <div className="absolute right-0 top-9 min-w-[100px] overflow-hidden rounded-lg border border-white/10 bg-black/90 py-1 backdrop-blur">
+                          {okruVideos.map((v, i) => (
+                            <button
+                              key={v.quality || i}
+                              onClick={() => selectOkruQuality(i)}
+                              className={`block w-full px-3 py-1.5 text-left text-xs font-semibold ${
+                                i === okruQualityIndex ? 'text-accent' : 'text-white/80 hover:bg-white/10'
+                              }`}
+                            >
+                              {v.quality || `Kualitas ${i + 1}`}
+                              {i === okruQualityIndex ? ' ✓' : ''}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    onClick={toggleFullscreen}
+                    aria-label="Fullscreen"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80"
+                  >
+                    {isFullscreen ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
                 {okruPlaybackError && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/85 px-4 text-center">
                     <p className="text-sm font-semibold text-white">Video gagal dimuat</p>
@@ -192,25 +268,6 @@ export default function AnichinVideoPlayer({ defaultPlayer, servers = [] }) {
           )}
         </div>
       </div>
-
-      {currentIsOkRu && okruVideos && okruVideos.length > 1 && (
-        <div className="mt-3">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-faint">Kualitas</p>
-          <div className="flex flex-wrap gap-2">
-            {okruVideos.map((v, i) => (
-              <button
-                key={v.quality || i}
-                onClick={() => selectOkruQuality(i)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                  i === okruQualityIndex ? 'border-accent bg-accent-50 text-accent' : 'border-line bg-paper-card text-ink-soft hover:border-accent hover:text-accent'
-                }`}
-              >
-                {v.quality || `Kualitas ${i + 1}`}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {validServers.length > 1 && (
         <div className="mt-4">
