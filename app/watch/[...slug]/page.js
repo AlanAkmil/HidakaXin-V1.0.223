@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import scraper from '../../../lib/scraper';
-import VideoPlayer from '../../../components/VideoPlayer';
+import AnimeXinVideoPlayer from '../../../components/AnimeXinVideoPlayer';
 import HistoryRecorder from '../../../components/HistoryRecorder';
 
 export const revalidate = 120;
@@ -49,7 +49,7 @@ export default async function WatchPage({ params }) {
 
       <h1 className="mb-4 font-display text-xl font-extrabold text-ink sm:text-2xl">{d.title}</h1>
 
-      <VideoPlayer defaultPlayer={d.defaultPlayer} servers={d.servers} />
+      <AnimeXinVideoPlayer defaultPlayer={d.defaultPlayer} servers={d.servers} />
 
       <div className="mt-6 flex items-center justify-between border-t border-line pt-4">
         {d.prevEpisode ? (
