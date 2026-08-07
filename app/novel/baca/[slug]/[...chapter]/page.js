@@ -49,6 +49,7 @@ export default async function NovelReaderPage({ params }) {
           novelSlug: slug,
           chapterSlug: chapter.join('/'),
           title: data.storyTitle || slug,
+          cover: data.cover || null,
             chapterTitle: data.title
           }}
         />
