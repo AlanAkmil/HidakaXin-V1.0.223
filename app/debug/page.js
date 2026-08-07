@@ -120,6 +120,22 @@ export default async function DebugPage({ searchParams }) {
     );
   }
 
+  if (test === 'anichin-detail-raw') {
+    const raw = await safeCall(() => anichin.rawDetail(anichinSlug));
+    content = (
+      <>
+        <Section title={`anichin.rawDetail("${anichinSlug || '(kosong, isi ?anichinSlug=... di URL)'}") — unmapped API response`}>
+          <pre>{JSON.stringify(raw, null, 2)}</pre>
+        </Section>
+        <Section title="Kenapa ada ini">
+          <p className="text-xs text-ink-faint">
+            Buat cari nama field aslinya kalau mau nambahin data baru (misal rekomendasi/related anime) yang belum di-mapping di anichin.detail().
+          </p>
+        </Section>
+      </>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       <h1 className="mb-1 font-display text-2xl font-extrabold text-ink">Debug</h1>
@@ -132,6 +148,7 @@ export default async function DebugPage({ searchParams }) {
         <DebugLink href="/debug?test=anichin-home" label="Anichin: home" />
         <DebugLink href="/debug?test=anichin-schedule" label="Anichin: schedule" />
         <DebugLink href={`/debug?test=anichin-detail&anichinSlug=${anichinSlug}`} label="Anichin: detail" />
+        <DebugLink href={`/debug?test=anichin-detail-raw&anichinSlug=${anichinSlug}`} label="Anichin: detail (raw/unmapped)" />
         <DebugLink href={`/debug?test=anichin-episode&anichinSlug=${anichinSlug}`} label="Anichin: episode" />
       </div>
 
