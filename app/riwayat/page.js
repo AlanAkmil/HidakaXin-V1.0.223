@@ -3,18 +3,23 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AnimeCard from '../../components/AnimeCard';
-import { getHistory, clearHistory } from '../../lib/store';
+import ReadingHistoryRow from '../../components/ReadingHistoryRow';
+import { getHistory, clearHistory, getNovelHistory, clearNovelHistory, getKomikHistory, clearKomikHistory } from '../../lib/store';
 
 export default function RiwayatPage() {
   const [items, setItems] = useState(null);
+  const [novelItems, setNovelItems] = useState(null);
+  const [komikItems, setKomikItems] = useState(null);
 
   useEffect(() => {
-    setItems(getHistory());
-    function onStorage() {
+    function refresh() {
       setItems(getHistory());
+      setNovelItems(getNovelHistory());
+      setKomikItems(getKomikHistory());
     }
-    window.addEventListener('hidakaxin:storage', onStorage);
-    return () => window.removeEventListener('hidakaxin:storage', onStorage);
+    refresh();
+    window.addEventListener('hidakaxin:storage', refresh);
+    return () => window.removeEventListener('hidakaxin:storage', refresh);
   }, []);
 
   function handleClear() {
@@ -22,32 +27,91 @@ export default function RiwayatPage() {
     setItems([]);
   }
 
+  function handleClearNovel() {
+    clearNovelHistory();
+    setNovelItems([]);
+  }
+
+  function handleClearKomik() {
+    clearKomikHistory();
+    setKomikItems([]);
+  }
+
+  const isEmpty = items?.length === 0 && novelItems?.length === 0 && komikItems?.length === 0;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-5">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-extrabold text-ink">Riwayat</h1>
-          <p className="text-sm text-ink-soft">Episode yang baru kamu tonton.</p>
-        </div>
-        {items?.length > 0 && (
-          <button onClick={handleClear} className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-accent hover:text-accent">
-            Hapus semua
-          </button>
-        )}
+      <div className="mb-5">
+        <h1 className="font-display text-2xl font-extrabold text-ink">Riwayat</h1>
+        <p className="text-sm text-ink-soft">Tontonan dan bacaan yang baru kamu buka.</p>
       </div>
 
-      {items?.length === 0 && (
+      {isEmpty && (
         <div className="rounded-xl border border-line bg-paper-card p-8 text-center shadow-card">
-          <p className="text-sm text-ink-soft">Belum ada riwayat tontonan.</p>
+          <p className="text-sm text-ink-soft">Belum ada riwayat.</p>
           <Link href="/daftar" className="mt-3 inline-block text-sm font-semibold text-accent">Jelajahi koleksi →</Link>
         </div>
       )}
 
       {items && items.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          {items.map((item, i) => (
-            <AnimeCard key={item.url + i} item={item} index={i} watchMode />
-          ))}
+        <div className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-display text-lg font-extrabold text-ink">Anime &amp; Donghua</p>
+            <button onClick={handleClear} className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-accent hover:text-accent">
+              Hapus semua
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            {items.map((item, i) => (
+              <AnimeCard key={item.url + i} item={item} index={i} watchMode />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {novelItems && novelItems.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-display text-lg font-extrabold text-ink">Novel</p>
+            <button onClick={handleClearNovel} className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-accent hover:text-accent">
+              Hapus semua
+            </button>
+          </div>
+          <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+            {novelItems.map((item, i) => (
+              <ReadingHistoryRow
+                key={item.chapterUrl + i}
+                href={`/novel/baca/${item.chapterUrl}`}
+                image={item.cover}
+                title={item.title}
+                subtitle={item.chapterTitle}
+                badge="Novel"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {komikItems && komikItems.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-display text-lg font-extrabold text-ink">Komik</p>
+            <button onClick={handleClearKomik} className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-accent hover:text-accent">
+              Hapus semua
+            </button>
+          </div>
+          <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+            {komikItems.map((item, i) => (
+              <ReadingHistoryRow
+                key={item.chapterUrl + i}
+                href={`/komik/baca/${item.komikSlug}/${item.chapterSlug}`}
+                image={item.cover}
+                title={item.title}
+                subtitle={item.chapterLabel}
+                badge="Komik"
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
