@@ -1,5 +1,6 @@
 import manga from '../../lib/mangaScraper';
 import anichin from '../../lib/anichinScraper';
+import sanka from '../../lib/sankaScraper';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,7 @@ export default async function DebugPage({ searchParams }) {
   const chapter = searchParams?.chapter || 'solo-leveling-chapter-1-bahasa-indonesia';
   const komikSlug = searchParams?.slug || 'solo-leveling';
   const anichinSlug = searchParams?.anichinSlug || '';
+  const sankaSlug = searchParams?.sankaSlug || '';
 
   let content = null;
 
@@ -120,6 +122,22 @@ export default async function DebugPage({ searchParams }) {
     );
   }
 
+  if (test === 'sanka-detail-raw') {
+    const raw = await safeCall(() => sanka.detail(sankaSlug));
+    content = (
+      <>
+        <Section title={`sanka.detail("${sankaSlug || '(kosong, isi ?sankaSlug=... di URL)'}") — raw API response`}>
+          <pre>{JSON.stringify(raw, null, 2)}</pre>
+        </Section>
+        <Section title="Kenapa ada ini">
+          <p className="text-xs text-ink-faint">
+            Buat cari nama field aslinya kalau mau nambahin data baru (misal rekomendasi/related anime) yang belum dipakai di app/anime-sanka/[slug]/page.js.
+          </p>
+        </Section>
+      </>
+    );
+  }
+
   if (test === 'anichin-detail-raw') {
     const raw = await safeCall(() => anichin.rawDetail(anichinSlug));
     content = (
@@ -150,6 +168,7 @@ export default async function DebugPage({ searchParams }) {
         <DebugLink href={`/debug?test=anichin-detail&anichinSlug=${anichinSlug}`} label="Anichin: detail" />
         <DebugLink href={`/debug?test=anichin-detail-raw&anichinSlug=${anichinSlug}`} label="Anichin: detail (raw/unmapped)" />
         <DebugLink href={`/debug?test=anichin-episode&anichinSlug=${anichinSlug}`} label="Anichin: episode" />
+        <DebugLink href={`/debug?test=sanka-detail-raw&sankaSlug=${sankaSlug}`} label="Sanka (Otakudesu): detail (raw)" />
       </div>
 
       {test === 'menu' && (
