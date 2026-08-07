@@ -2,6 +2,7 @@ import Link from 'next/link';
 import manga, { slugFromChapterUrl } from '../../../../../lib/mangaScraper';
 import RetryImage from '../../../../../components/RetryImage';
 import TapToScroll from '../../../../../components/TapToScroll';
+import KomikHistoryRecorder from '../../../../../components/KomikHistoryRecorder';
 
 async function getRead(chapter) {
   try {
@@ -11,9 +12,17 @@ async function getRead(chapter) {
   }
 }
 
+async function getDetail(slug) {
+  try {
+    return await manga.detail(slug);
+  } catch {
+    return null;
+  }
+}
+
 export default async function KomikReaderPage({ params }) {
   const { slug, chapter } = params;
-  const data = await getRead(chapter);
+  const [data, detail] = await Promise.all([getRead(chapter), getDetail(slug)]);
 
   if (!data) {
     return (
@@ -26,9 +35,21 @@ export default async function KomikReaderPage({ params }) {
 
   const prevSlug = data.prevUrl ? slugFromChapterUrl(data.prevUrl) : null;
   const nextSlug = data.nextUrl ? slugFromChapterUrl(data.nextUrl) : null;
+  const chapterLabel = detail?.chapters?.find((c) => c.slug === chapter)?.label || chapter.replace(/-/g, ' ');
 
   return (
     <div className="mx-auto max-w-2xl px-0 py-0 sm:px-4 sm:py-5">
+      <KomikHistoryRecorder
+        item={{
+          chapterUrl: `${slug}/${chapter}`,
+          komikSlug: slug,
+          chapterSlug: chapter,
+          title: detail?.title || slug,
+          cover: detail?.cover || null,
+          chapterLabel
+        }}
+      />
+
       <div className="sticky top-[52px] z-20 flex items-center justify-between border-b border-line bg-paper/95 px-4 py-3 backdrop-blur sm:rounded-xl sm:border">
         <Link href={`/komik/${slug}`} className="flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-accent">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
