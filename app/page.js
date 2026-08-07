@@ -6,6 +6,8 @@ import MangaCard from '../components/MangaCard';
 import NovelRow from '../components/NovelRow';
 import SectionHeader from '../components/SectionHeader';
 import ContinueWatching from '../components/ContinueWatching';
+import ContinueReadingNovel from '../components/ContinueReadingNovel';
+import ContinueReadingKomik from '../components/ContinueReadingKomik';
 import scraper from '../lib/scraper';
 import sanka from '../lib/sankaScraper';
 import anichin from '../lib/anichinScraper';
@@ -111,6 +113,8 @@ export default async function HomePage() {
       )}
 
       <ContinueWatching />
+      <ContinueReadingNovel />
+      <ContinueReadingKomik />
 
       {donghua.heroItem && (
         <section className="mb-8">
