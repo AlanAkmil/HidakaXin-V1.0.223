@@ -11,18 +11,26 @@ function slugFromUrl(url) {
 }
 
 export default function AnimeRow({ item, watchMode = false }) {
+  const isWebtoons = item.source === 'webtoons';
   const slug = slugFromUrl(item.url);
   const isAnichin = item.source === 'anichin';
   const isSanka = item.source === 'sanka';
-  const href = isAnichin
-    ? `/anime-ac/${slug}`
+  const href = isWebtoons
+    ? item.url
+    : isAnichin
+    ? (watchMode ? `/watch-ac/${slug}` : `/anime-ac/${slug}`)
     : isSanka
-    ? `/anime-sanka/${slug}`
+    ? (watchMode ? `/watch-sanka/${slug}` : `/anime-sanka/${slug}`)
     : (watchMode ? `/watch/${slug}` : `/anime/${slug}`);
   const tag = item.genres?.[0] || item.type || null;
 
   return (
-    <Link href={href} className="flex w-64 flex-shrink-0 gap-3 rounded-xl border border-line bg-paper-card p-2 shadow-card sm:w-72">
+    <Link
+      href={href}
+      target={isWebtoons ? '_blank' : undefined}
+      rel={isWebtoons ? 'noreferrer' : undefined}
+      className="flex w-64 flex-shrink-0 gap-3 rounded-xl border border-line bg-paper-card p-2 shadow-card sm:w-72"
+    >
       <div className="h-20 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-paper-soft">
         {item.image && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -46,7 +54,7 @@ export default function AnimeRow({ item, watchMode = false }) {
             </span>
           )}
           <span className="ml-auto rounded-full bg-paper-soft px-1.5 py-0.5 text-[9px] font-bold uppercase text-ink-faint">
-            {isSanka ? 'Anime' : isAnichin ? 'Anichin' : 'Donghua'}
+            {isWebtoons ? 'Webtoon' : isSanka ? 'Anime' : isAnichin ? 'Anichin' : 'Donghua'}
           </span>
         </div>
       </div>
