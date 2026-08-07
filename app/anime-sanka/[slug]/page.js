@@ -92,6 +92,31 @@ export default async function AnimeSankaDetailPage({ params }) {
           </div>
         </div>
       )}
+
+      {d.recommendedAnimeList?.length > 0 && (
+        <div className="mt-8">
+          <p className="mb-3 font-display text-lg font-extrabold text-ink">Rekomendasi</p>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+            {d.recommendedAnimeList.map((r) => (
+              <Link key={r.animeId} href={`/anime-sanka/${r.animeId}`} className="group">
+                <div className="overflow-hidden rounded-xl border border-line bg-paper-soft shadow-card">
+                  {r.poster ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.poster}
+                      alt={r.title}
+                      className="aspect-[2/3] w-full object-cover transition group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex aspect-[2/3] items-center justify-center text-ink-faint font-display text-2xl">?</div>
+                  )}
+                </div>
+                <p className="mt-1.5 line-clamp-2 text-xs font-semibold text-ink">{r.title}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
