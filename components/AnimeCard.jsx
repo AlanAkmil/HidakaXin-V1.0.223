@@ -18,19 +18,27 @@ function slugFromUrl(url) {
  * item.source, so the two can be freely mixed in the same grid.
  */
 export default function AnimeCard({ item, index = 0, watchMode = false }) {
+  const isWebtoons = item.source === 'webtoons';
   const slug = slugFromUrl(item.url);
   const isAnichin = item.source === 'anichin';
   const isSanka = item.source === 'sanka';
-  const href = isAnichin
-    ? `/anime-ac/${slug}`
+  const href = isWebtoons
+    ? item.url // full external webtoons.com URL — not an internal slug
+    : isAnichin
+    ? (watchMode ? `/watch-ac/${slug}` : `/anime-ac/${slug}`)
     : isSanka
-    ? `/anime-sanka/${slug}` // no episodeId at listing level, always send to detail
+    ? (watchMode ? `/watch-sanka/${slug}` : `/anime-sanka/${slug}`)
     : (watchMode ? `/watch/${slug}` : `/anime/${slug}`);
   const tag = item.genres?.[0] || item.type || null;
 
   return (
     <RevealOnView delay={(index % 12) * 35}>
-      <Link href={href} className="group block">
+      <Link
+        href={href}
+        target={isWebtoons ? '_blank' : undefined}
+        rel={isWebtoons ? 'noreferrer' : undefined}
+        className="group block"
+      >
         <div className="relative aspect-[2/3] overflow-hidden rounded-xl border border-line bg-paper-soft shadow-card">
           {item.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -44,7 +52,7 @@ export default function AnimeCard({ item, index = 0, watchMode = false }) {
             <div className="flex h-full w-full items-center justify-center text-ink-faint font-display">?</div>
           )}
           <span className="absolute right-2 top-2 rounded-full bg-paper-card/90 px-2 py-0.5 text-[9px] font-bold uppercase text-ink-soft shadow">
-            {isSanka ? 'Anime' : isAnichin ? 'Anichin' : 'Donghua'}
+            {isWebtoons ? 'Webtoon' : isSanka ? 'Anime' : isAnichin ? 'Anichin' : 'Donghua'}
           </span>
           {(item.episode || item.status) && (
             <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white shadow">
