@@ -13,7 +13,7 @@ import manga from '../lib/mangaScraper';
 import webtoons from '../lib/webtoonsScraper';
 import { getLatestMeioNovels } from '../lib/meioNovelScraper';
 import { getDonghuaSource } from '../lib/donghuaSource';
-import { normalizeDonghua, normalizeAnichin, normalizeSanka, normalizeWestmanhwa, normalizeWebtoon, shuffleTogether, findScheduleKeyForDay, DAY_NAMES_ID } from '../lib/normalize';
+import { normalizeDonghua, normalizeAnichin, normalizeSanka, normalizeWestmanhwa, normalizeWebtoon, deriveSeriesUrl, shuffleTogether, findScheduleKeyForDay, DAY_NAMES_ID } from '../lib/normalize';
 
 export const revalidate = 300;
 
@@ -59,7 +59,10 @@ async function getDonghuaData(source) {
     ok: !!data,
     heroItem: data?.popular?.weekly?.[0] ? normalizeDonghua(data.popular.weekly[0]) : null,
     weeklyRow: (data?.popular?.weekly || []).slice(1).map(normalizeDonghua),
-    latest: (data?.latestReleases || []).map(normalizeDonghua),
+    // latestReleases links point to the newest EPISODE post, not the
+    // series page — derive the series slug so cards open the detail page
+    // (with full episode list) instead of a bare single-episode post.
+    latest: (data?.latestReleases || []).map((item) => normalizeDonghua({ ...item, url: deriveSeriesUrl(item.url) })),
     popular: (data?.popular?.allTime || []).map(normalizeDonghua),
     schedule
   };
