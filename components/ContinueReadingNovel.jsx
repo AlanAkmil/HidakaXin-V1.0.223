@@ -9,12 +9,20 @@ export default function ContinueReadingNovel() {
   const [items, setItems] = useState(null);
 
   useEffect(() => {
-    setItems(getNovelHistory());
+    let active = true;
+    async function load() {
+      const data = await getNovelHistory();
+      if (active) setItems(data);
+    }
+    load();
     function onStorage() {
-      setItems(getNovelHistory());
+      load();
     }
     window.addEventListener('hidakaxin:storage', onStorage);
-    return () => window.removeEventListener('hidakaxin:storage', onStorage);
+    return () => {
+      active = false;
+      window.removeEventListener('hidakaxin:storage', onStorage);
+    };
   }, []);
 
   if (!items || items.length === 0) return null;
@@ -26,7 +34,7 @@ export default function ContinueReadingNovel() {
         {items.slice(0, 10).map((item, i) => (
           <ReadingHistoryRow
             key={item.chapterUrl + i}
-            href={`/novel/baca/${item.chapterUrl}`}
+            href={item.readHref || `/novel/baca/${item.chapterUrl}`}
             image={item.cover}
             title={item.title}
             subtitle={item.chapterTitle}
