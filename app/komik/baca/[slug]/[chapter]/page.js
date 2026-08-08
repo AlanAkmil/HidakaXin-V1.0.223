@@ -46,7 +46,8 @@ export default async function KomikReaderPage({ params }) {
           chapterSlug: chapter,
           title: detail?.title || slug,
           cover: detail?.cover || null,
-          chapterLabel
+          chapterLabel,
+          readHref: `/komik/baca/${slug}/${chapter}`
         }}
       />
 
