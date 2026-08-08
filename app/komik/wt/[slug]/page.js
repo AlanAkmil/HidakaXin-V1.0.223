@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import webtoons from '../../../../lib/webtoonsScraper';
 import RetryImage from '../../../../components/RetryImage';
-import HistoryRecorder from '../../../../components/HistoryRecorder';
+import KomikHistoryRecorder from '../../../../components/KomikHistoryRecorder';
 import TapToScroll from '../../../../components/TapToScroll';
 
 export const revalidate = 300;
@@ -18,6 +18,18 @@ function proxied(url) {
   return `/api/komik/img?url=${encodeURIComponent(url)}`;
 }
 
+// Webtoons episode URLs carry an "episode_no=" query param — best-effort
+// label for the continue-reading card subtitle, since episodeImages()
+// itself doesn't return a separate episode number.
+function episodeLabelFromUrl(url) {
+  try {
+    const n = new URL(url).searchParams.get('episode_no');
+    return n ? `Episode ${n}` : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function WebtoonReaderPage({ params }) {
   const url = decodeURIComponent(params.slug);
   const data = await getData(url);
@@ -25,12 +37,13 @@ export default async function WebtoonReaderPage({ params }) {
 
   return (
     <div className="mx-auto max-w-2xl px-0 py-0 sm:px-4 sm:py-5">
-      <HistoryRecorder
+      <KomikHistoryRecorder
         item={{
-          url,
-          title: data?.title || 'Webtoons episode',
-          image: data?.thumbnail ? proxied(data.thumbnail) : null,
-          source: 'webtoons'
+          chapterUrl: url,
+          title: data?.title || 'Webtoons',
+          cover: data?.thumbnail ? proxied(data.thumbnail) : null,
+          chapterLabel: episodeLabelFromUrl(url),
+          readHref: `/komik/wt/${encodeURIComponent(url)}`
         }}
       />
 
