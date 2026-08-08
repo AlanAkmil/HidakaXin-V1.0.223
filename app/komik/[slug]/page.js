@@ -42,6 +42,7 @@ export default async function KomikDetailPage({ params }) {
           <h1 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">{d.title}</h1>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
+            {d.type && <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-white">{d.type}</span>}
             {d.status && <span className="rounded-full bg-accent-50 px-3 py-1 text-xs font-semibold text-accent">{d.status}</span>}
             {d.rating && (
               <span className="flex items-center gap-1 rounded-full bg-gold-soft px-3 py-1 text-xs font-semibold text-gold">
