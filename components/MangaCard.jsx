@@ -17,11 +17,8 @@ export default function MangaCard({ item, index = 0 }) {
           ) : (
             <div className="flex h-full w-full items-center justify-center text-ink-faint font-display">?</div>
           )}
-          {item.type && (
-            <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white shadow">{item.type}</span>
-          )}
           <span className="absolute right-2 top-2 rounded-full bg-paper-card/90 px-2 py-0.5 text-[9px] font-bold uppercase text-ink-soft shadow">
-            {isWebtoon ? 'Webtoons' : 'Manhwa'}
+            {isWebtoon ? 'Webtoons' : item.type || 'Komik'}
           </span>
         </div>
         <div className="mt-2 px-0.5">
