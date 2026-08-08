@@ -9,12 +9,20 @@ export default function FavoritPage() {
   const [items, setItems] = useState(null);
 
   useEffect(() => {
-    setItems(getFavorites());
+    let active = true;
+    async function load() {
+      const data = await getFavorites();
+      if (active) setItems(data);
+    }
+    load();
     function onStorage() {
-      setItems(getFavorites());
+      load();
     }
     window.addEventListener('hidakaxin:storage', onStorage);
-    return () => window.removeEventListener('hidakaxin:storage', onStorage);
+    return () => {
+      active = false;
+      window.removeEventListener('hidakaxin:storage', onStorage);
+    };
   }, []);
 
   return (
