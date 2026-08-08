@@ -12,28 +12,36 @@ export default function RiwayatPage() {
   const [komikItems, setKomikItems] = useState(null);
 
   useEffect(() => {
-    function refresh() {
-      setItems(getHistory());
-      setNovelItems(getNovelHistory());
-      setKomikItems(getKomikHistory());
+    let active = true;
+    async function refresh() {
+      const [history, novel, komik] = await Promise.all([getHistory(), getNovelHistory(), getKomikHistory()]);
+      if (!active) return;
+      // Webtoons entries now live in komik_history / "Lanjut Baca Komik"
+      // instead — filter out any leftover ones from before that change.
+      setItems(history.filter((item) => item.source !== 'webtoons'));
+      setNovelItems(novel);
+      setKomikItems(komik);
     }
     refresh();
     window.addEventListener('hidakaxin:storage', refresh);
-    return () => window.removeEventListener('hidakaxin:storage', refresh);
+    return () => {
+      active = false;
+      window.removeEventListener('hidakaxin:storage', refresh);
+    };
   }, []);
 
-  function handleClear() {
-    clearHistory();
+  async function handleClear() {
+    await clearHistory();
     setItems([]);
   }
 
-  function handleClearNovel() {
-    clearNovelHistory();
+  async function handleClearNovel() {
+    await clearNovelHistory();
     setNovelItems([]);
   }
 
-  function handleClearKomik() {
-    clearKomikHistory();
+  async function handleClearKomik() {
+    await clearKomikHistory();
     setKomikItems([]);
   }
 
@@ -81,7 +89,7 @@ export default function RiwayatPage() {
             {novelItems.map((item, i) => (
               <ReadingHistoryRow
                 key={item.chapterUrl + i}
-                href={`/novel/baca/${item.chapterUrl}`}
+                href={item.readHref || `/novel/baca/${item.chapterUrl}`}
                 image={item.cover}
                 title={item.title}
                 subtitle={item.chapterTitle}
@@ -104,7 +112,7 @@ export default function RiwayatPage() {
             {komikItems.map((item, i) => (
               <ReadingHistoryRow
                 key={item.chapterUrl + i}
-                href={`/komik/baca/${item.komikSlug}/${item.chapterSlug}`}
+                href={item.readHref || `/komik/baca/${item.komikSlug}/${item.chapterSlug}`}
                 image={item.cover}
                 title={item.title}
                 subtitle={item.chapterLabel}
