@@ -9,12 +9,22 @@ export default function ContinueWatching() {
   const [items, setItems] = useState(null);
 
   useEffect(() => {
-    setItems(getHistory());
+    let active = true;
+    async function load() {
+      const data = await getHistory();
+      // Webtoons entries now live in komik_history / "Lanjut Baca Komik"
+      // instead — filter out any leftover ones from before that change.
+      if (active) setItems(data.filter((item) => item.source !== 'webtoons'));
+    }
+    load();
     function onStorage() {
-      setItems(getHistory());
+      load();
     }
     window.addEventListener('hidakaxin:storage', onStorage);
-    return () => window.removeEventListener('hidakaxin:storage', onStorage);
+    return () => {
+      active = false;
+      window.removeEventListener('hidakaxin:storage', onStorage);
+    };
   }, []);
 
   if (!items || items.length === 0) return null;
