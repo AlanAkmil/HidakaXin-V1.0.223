@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getFavorites, getHistory, getProfile, setProfileName } from '../../lib/store';
+import { getFavorites, getHistory, getProfile, setProfileName, migrateLocalDataToAccount } from '../../lib/store';
 import { supabase } from '../../lib/supabaseClient';
 
 const SECTIONS = [
@@ -43,16 +43,32 @@ export default function ProfilePage() {
     const p = getProfile();
     setName(p.name);
     setDraft(p.name);
-    setFavCount(getFavorites().length);
-    setHistCount(getHistory().length);
+
+    async function refreshCounts() {
+      const [favs, hist] = await Promise.all([getFavorites(), getHistory()]);
+      setFavCount(favs.length);
+      setHistCount(hist.length);
+    }
+    refreshCounts();
+    window.addEventListener('hidakaxin:storage', refreshCounts);
 
     if (supabase) {
-      supabase.auth.getSession().then(({ data }) => setSession(data.session));
-      const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
-      return () => sub.subscription.unsubscribe();
+      supabase.auth.getSession().then(({ data }) => {
+        setSession(data.session);
+        if (data.session) migrateLocalDataToAccount().then(refreshCounts);
+      });
+      const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+        setSession(s);
+        if (event === 'SIGNED_IN') migrateLocalDataToAccount().then(refreshCounts);
+      });
+      return () => {
+        sub.subscription.unsubscribe();
+        window.removeEventListener('hidakaxin:storage', refreshCounts);
+      };
     } else {
       setSession(null);
     }
+    return () => window.removeEventListener('hidakaxin:storage', refreshCounts);
   }, []);
 
   function saveName() {
