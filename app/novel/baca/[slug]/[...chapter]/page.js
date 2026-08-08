@@ -50,9 +50,10 @@ export default async function NovelReaderPage({ params }) {
           chapterSlug: chapter.join('/'),
           title: data.storyTitle || slug,
           cover: data.cover || null,
-            chapterTitle: data.title
-          }}
-        />
+          chapterTitle: data.title,
+          readHref: `/novel/baca/${slug}/${chapter.join('/')}`
+        }}
+      />
 
         {/* Hero — cover image with title overlaid, WattPad-style */}
         <div className="relative flex h-56 items-end overflow-hidden bg-ink sm:h-72">
