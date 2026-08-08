@@ -9,12 +9,20 @@ export default function ContinueReadingKomik() {
   const [items, setItems] = useState(null);
 
   useEffect(() => {
-    setItems(getKomikHistory());
+    let active = true;
+    async function load() {
+      const data = await getKomikHistory();
+      if (active) setItems(data);
+    }
+    load();
     function onStorage() {
-      setItems(getKomikHistory());
+      load();
     }
     window.addEventListener('hidakaxin:storage', onStorage);
-    return () => window.removeEventListener('hidakaxin:storage', onStorage);
+    return () => {
+      active = false;
+      window.removeEventListener('hidakaxin:storage', onStorage);
+    };
   }, []);
 
   if (!items || items.length === 0) return null;
@@ -26,7 +34,7 @@ export default function ContinueReadingKomik() {
         {items.slice(0, 10).map((item, i) => (
           <ReadingHistoryRow
             key={item.chapterUrl + i}
-            href={`/komik/baca/${item.komikSlug}/${item.chapterSlug}`}
+            href={item.readHref || `/komik/baca/${item.komikSlug}/${item.chapterSlug}`}
             image={item.cover}
             title={item.title}
             subtitle={item.chapterLabel}
