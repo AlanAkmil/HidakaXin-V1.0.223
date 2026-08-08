@@ -7,11 +7,17 @@ export default function FavoriteButton({ item }) {
   const [fav, setFav] = useState(false);
 
   useEffect(() => {
-    setFav(isFavorite(item.url));
+    let active = true;
+    isFavorite(item.url).then((v) => {
+      if (active) setFav(v);
+    });
+    return () => {
+      active = false;
+    };
   }, [item.url]);
 
-  function handleClick() {
-    const nowFav = toggleFavorite(item);
+  async function handleClick() {
+    const nowFav = await toggleFavorite(item);
     setFav(nowFav);
   }
 
